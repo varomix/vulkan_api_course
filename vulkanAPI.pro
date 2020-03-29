@@ -6,4 +6,9 @@ CONFIG -= qt
 LIBS += -lvulkan -lxcb -lglfw
 
 SOURCES += \
-        main.cpp
+        main.cpp \
+    renderer.cpp
+
+HEADERS += \
+    renderer.h \
+    utilities.h
