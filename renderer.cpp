@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "validation.h"
 #include "renderer.h"
 
 
@@ -37,6 +38,11 @@ Renderer::~Renderer()
 
 void Renderer::createInstance()
 {
+    if(validationEnabled && !checkValidationLayerSupport())
+    {
+        throw std::runtime_error("Required Validation Layers not supported");
+    }
+
 	// for developer convenience
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -71,9 +77,16 @@ void Renderer::createInstance()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
 	createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
-	// TODO: Set up validation layers
-	createInfo.enabledLayerCount = 0;
-	createInfo.ppEnabledLayerNames = nullptr;
+    if(validationEnabled)
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+    else
+    {
+        createInfo.enabledLayerCount = 0;
+        createInfo.ppEnabledLayerNames = nullptr;
+    }
 
 	// create instance
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
@@ -89,7 +102,7 @@ void Renderer::createLogicalDevice()
 	// get the queue family indices for the chosen physical device
 	QueueFamiliesIndices indices = getQueueFamilies(mainDevice.physicalDevice);
 
-	// Queue the logical device needs to create and info to do so
+    // Queue the logical device needs to create and info to do so
 	VkDeviceQueueCreateInfo queueCreateInfo = {};
 	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
@@ -162,7 +175,7 @@ bool Renderer::checkInstanceExtensionSupport(std::vector<const char *> *checkExt
 	{
 		bool hasExtension = false;
 		for (const auto &extension: extensions) {
-			if(strcmp(checkExtension, extension.extensionName))
+            if(strcmp(checkExtension, extension.extensionName) == 0)
 			{
 				hasExtension = true;
 				break;
@@ -171,7 +184,43 @@ bool Renderer::checkInstanceExtensionSupport(std::vector<const char *> *checkExt
 
 		if(!hasExtension) return false;
 	}
-	return true;
+    return true;
+}
+
+bool Renderer::checkValidationLayerSupport()
+{
+    uint32_t validationLayerCount;
+    vkEnumerateInstanceLayerProperties(&validationLayerCount, nullptr);
+
+    // check if no validation layers found AND we want at least 1 layer
+    if (validationLayerCount == 0 && validationLayers.size() > 0)
+    {
+        return false;
+    }
+
+
+    std::vector<VkLayerProperties> availableLayers(validationLayerCount);
+    vkEnumerateInstanceLayerProperties(&validationLayerCount, availableLayers.data());
+
+    // check if given validation layer is in list of given validation Layers
+    for (const auto &validationLayer : validationLayers)
+    {
+        bool hasLayer = false;
+        for(const auto &availableLayer : availableLayers)
+        {
+            if(strcmp(validationLayer, availableLayer.layerName) == 0)
+            {
+                hasLayer = true;
+                break;
+            }
+        }
+
+        if(!hasLayer)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Renderer::checkDeviceSuitable(VkPhysicalDevice device)

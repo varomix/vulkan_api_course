@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
+
 #include "utilities.h"
 
 class Renderer
@@ -41,6 +42,7 @@ private:
 	// - Support Functions
 	// -- Checker Functions
 	bool checkInstanceExtensionSupport(std::vector<const char*> *checkExtensions);
+    bool checkValidationLayerSupport();
 	bool checkDeviceSuitable(VkPhysicalDevice device);
 
 	// -- Getter Functions
