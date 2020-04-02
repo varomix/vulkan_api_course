@@ -20,20 +20,22 @@ public:
 
 	~Renderer();
 private:
-	GLFWwindow *window;
+	GLFWwindow *window{};
 
 	// Vulkan components
-	VkInstance instance;
+	VkInstance instance{};
+	VkDebugReportCallbackEXT callback;
 	struct{
 		VkPhysicalDevice physicalDevice;
 		VkDevice logicalDevice;
-	}mainDevice;
+	}mainDevice{};
 
-	VkQueue graphicsQueue;
+	VkQueue graphicsQueue{};
 
 	// Vulkan functions
 	// - Create Functions
 	void createInstance();
+	void createDebugCallback();
 	void createLogicalDevice();
 
 	// Get Functions

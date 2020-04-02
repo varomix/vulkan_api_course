@@ -5,7 +5,7 @@
 static GLFWwindow *window;
 static Renderer renderer;
 
-void initWindow(const int width = 800, const int height = 600, std::string wName = "Vulkan Course")
+void initWindow(const int width = 1280, const int height = 720, const std::string& wName = "Vulkan Course")
 {
 	glfwInit();
 
@@ -13,6 +13,12 @@ void initWindow(const int width = 800, const int height = 600, std::string wName
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	window = glfwCreateWindow(width, height, wName.c_str(), nullptr, nullptr);
+}
+
+void processInput(GLFWwindow *window)
+{
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
 }
 
 int main()
@@ -27,6 +33,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        processInput(window);
 		//glfwPollEvents();
 		glfwWaitEventsTimeout(0.01);
     }
