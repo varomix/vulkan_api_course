@@ -13,6 +13,8 @@ int Renderer::init(GLFWwindow *newWindow) {
 
     try {
         createInstance();
+        createDebugCallback();
+        createSurface();
         getPhysicalDevice();
         createLogicalDevice();
 
@@ -24,6 +26,7 @@ int Renderer::init(GLFWwindow *newWindow) {
 }
 
 void Renderer::cleanup() {
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyDevice(mainDevice.logicalDevice, nullptr);
 
     if(validationEnabled){
@@ -101,6 +104,10 @@ void Renderer::createLogicalDevice() {
     // get the queue family indices for the chosen physical device
     QueueFamiliesIndices indices = getQueueFamilies(mainDevice.physicalDevice);
 
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<int> queueFamilyIndices = {indices.graphicsFamily, indices.presentationFamily};
+
+
     // Queue the logical device needs to create and info to do so
     VkDeviceQueueCreateInfo queueCreateInfo = {};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -132,6 +139,15 @@ void Renderer::createLogicalDevice() {
 
 }
 
+void Renderer::createSurface() {
+    // Create Surface (create a surface create info struct, runs the create surface function
+    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create a surface");
+    }
+}
+
 void Renderer::getPhysicalDevice() {
     // Enumerate physicla devices
     uint32_t deviceCount = 0;
@@ -151,7 +167,6 @@ void Renderer::getPhysicalDevice() {
             break;
         }
     }
-
 }
 
 bool Renderer::checkInstanceExtensionSupport(std::vector<const char *> *checkExtensions) {
@@ -209,18 +224,25 @@ bool Renderer::checkValidationLayerSupport() {
 }
 
 bool Renderer::checkDeviceSuitable(VkPhysicalDevice device) {
-    /*
+
     // Information about the device(ID, name, type, vendor, etc.)
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    printf("Device Properties %s \n Device type %u \n", deviceProperties.deviceName, deviceProperties.deviceType);
 
     // Information about what the device can do(geo shader, tess shader, wide lines, etc.
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    */
+
 
     QueueFamiliesIndices indices = getQueueFamilies(device);
-    return indices.isValid();
+
+    // getting the discreet GPU
+    if(deviceProperties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        return indices.isValid();
+    }
+    return false;
 }
 
 QueueFamiliesIndices Renderer::getQueueFamilies(VkPhysicalDevice device) {
@@ -233,13 +255,21 @@ QueueFamiliesIndices Renderer::getQueueFamilies(VkPhysicalDevice device) {
     std::vector<VkQueueFamilyProperties> queueFamilyList(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilyList.data());
 
-    // Check if queu family has at least 1 queue
+    // Check if queue family has at least 1 queue
     int i = 0;
     for (const auto &queueFamily : queueFamilyList) {
         // first check if queue family has at least 1 queue in the family (could have no queues)
-        // QUeue can be multiple types defined through bitfield, Need to bitwse AND with VK_QUEUE_*_BIT to check if has required type
+        // Queue can be multiple types defined through bitfield, Need to bitwse AND with VK_QUEUE_*_BIT to check if has required type
         if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;  // if queue family is valid, then get index
+        }
+
+        // check if queue family supports presentation
+        VkBool32 presentationSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentationSupport);
+
+        if (queueFamily.queueCount > 0 && presentationSupport) {
+            indices.presentationFamily = i;
         }
 
         // Check if queue family indices are in a valid state, stop searching if so.
@@ -267,3 +297,5 @@ void Renderer::createDebugCallback() {
         throw std::runtime_error("Failed to create debug callback");
     }
 }
+
+

@@ -2,53 +2,63 @@
 #define RENDERER_H
 
 #define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
 
 #include <stdexcept>
 #include <vector>
-
+#include <set>
 
 #include "utilities.h"
 
-class Renderer
-{
+class Renderer {
 public:
-	Renderer();
+    Renderer();
 
-	int init(GLFWwindow *newWindow);
-	void cleanup();
+    int init(GLFWwindow *newWindow);
 
-	~Renderer();
+    void cleanup();
+
+    ~Renderer();
+
 private:
-	GLFWwindow *window{};
+    GLFWwindow *window{};
 
-	// Vulkan components
-	VkInstance instance{};
-	VkDebugReportCallbackEXT callback;
-	struct{
-		VkPhysicalDevice physicalDevice;
-		VkDevice logicalDevice;
-	}mainDevice{};
+    // Vulkan components
+    VkInstance instance{};
+    VkDebugReportCallbackEXT callback;
+    struct {
+        VkPhysicalDevice physicalDevice;
+        VkDevice logicalDevice;
+    } mainDevice{};
 
-	VkQueue graphicsQueue{};
+    VkQueue graphicsQueue{};
+    VkSurfaceKHR surface{};
 
-	// Vulkan functions
-	// - Create Functions
-	void createInstance();
-	void createDebugCallback();
-	void createLogicalDevice();
+    // Vulkan functions
+    // - Create Functions
+    void createInstance();
 
-	// Get Functions
-	void getPhysicalDevice();
+    void createDebugCallback();
 
-	// - Support Functions
-	// -- Checker Functions
-	bool checkInstanceExtensionSupport(std::vector<const char*> *checkExtensions);
+    void createLogicalDevice();
+
+    void createSurface();
+
+    // Get Functions
+    void getPhysicalDevice();
+
+    // - Support Functions
+    // -- Checker Functions
+    bool checkInstanceExtensionSupport(std::vector<const char *> *checkExtensions);
+
     bool checkValidationLayerSupport();
-	bool checkDeviceSuitable(VkPhysicalDevice device);
 
-	// -- Getter Functions
-	QueueFamiliesIndices getQueueFamilies(VkPhysicalDevice device);
+    bool checkDeviceSuitable(VkPhysicalDevice device);
+
+    // -- Getter Functions
+    QueueFamiliesIndices getQueueFamilies(VkPhysicalDevice device);
+
 };
 
 #endif // RENDERER_H
